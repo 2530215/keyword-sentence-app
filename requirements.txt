@@ -6,3 +6,4 @@ scikit-learn
 konlpy
 PyMuPDF
 PyGithub
+requests
