@@ -3,3 +3,4 @@ gensim
 pandas
 numpy
 scikit-learn
+konlpy
