@@ -283,6 +283,6 @@ st.sidebar.markdown(f"""
 """)
 st.sidebar.markdown("---")
 st.sidebar.caption("Made with Streamlit, KoNLPy, PyMuPDF & Word2Vec")
-""")
+
 st.sidebar.markdown("---")
 st.sidebar.caption("Made with Streamlit, KoNLPy & PyMuPDF")
