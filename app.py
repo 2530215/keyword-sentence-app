@@ -293,6 +293,3 @@ st.markdown("[구글 폼 링크](https://docs.google.com/forms/d/e/1FAIpQLSdqbJD
 
 st.sidebar.markdown("---")
 st.sidebar.caption("Made with Streamlit, KoNLPy, PyMuPDF & Word2Vec")
-
-st.sidebar.markdown("---")
-st.sidebar.caption("Made with Streamlit, KoNLPy & PyMuPDF")
