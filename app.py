@@ -49,7 +49,7 @@ STOPWORDS = [
     '기록함', '기재함', '작성함',
     '됨', '함', '높음', '낮음', '많음', '적음',
     '기대됨', '요망됨'
-    '상원','고등학교','상원고등학교','번호','표현','설명','이름'
+    '상원','고등학교','상원고등학교','번호','표현','설명','이름','성함'
 ]
 MIN_NOUN_LEN = 2
 MIN_WORD_COUNT_FOR_W2V = 1
@@ -99,8 +99,8 @@ Word2Vec 모델을 통해 유사 단어 및 관련 높은 문장을 찾아줍니
 **PDF 파일을 업로드하거나 텍스트를 직접 입력하여 분석할 수 있습니다.**
 """)
 st.subheader("1. 분석할 생기부 데이터 입력")
+st.markdown("[카카오톡에서 생기부 pdf 다운받는법(권장!!)](https://blog.naver.com/needtime0514/223256443411)", unsafe_allow_html=True)
 st.markdown("[정부24에서 생기부 pdf 다운받는법](https://blog.naver.com/leeyju4/223208661500)", unsafe_allow_html=True)
-st.markdown("[카카오톡에서 생기부 pdf 다운받는법](https://blog.naver.com/needtime0514/223256443411)", unsafe_allow_html=True)
 
 uploaded_pdf_file = st.file_uploader("생기부 PDF 파일 업로드 (PDF 업로드 시 아래 텍스트 입력 내용은 무시됩니다):", type="pdf")
 raw_sentence_input_area = st.text_area("또는, 생기부 내용을 여기에 직접 붙여넣으세요:", height=200, placeholder="PDF를 업로드하지 않을 경우 여기에 텍스트를 입력해주세요...")
@@ -259,9 +259,7 @@ if raw_sentence_input and raw_sentence_input.strip():
                             displayed_sentence_count +=1
                     if displayed_sentence_count == 0:
                         st.info("주요 키워드에 대한 연관 문장을 찾을 수 없었습니다.")
-else:
-    if not uploaded_pdf_file and not raw_sentence_input_area.strip():
-        st.info("생기부 PDF 파일을 업로드하거나, 텍스트를 직접 입력해주세요.")
+
 
 # --- 사이드바 (이전과 동일) ---
 # ... (사이드바 코드는 그대로 유지) ...
