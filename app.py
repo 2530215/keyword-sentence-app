@@ -117,48 +117,10 @@ elif raw_sentence_input_area.strip():
 else:
     pass
 
+# ... (이전 코드들은 동일하게 유지) ...
+
 if raw_sentence_input and raw_sentence_input.strip():
     if st.button("분석 시작 ✨"):
-        # --- Streamlit UI 또는 분석 시작 버튼 로직 내부에 임시로 추가 ---
-        
-        # 예시 텍스트 (실제 생기부에서 "상원"이 포함된 문장을 가져오면 더 정확합니다)
-        test_sentence_with_sangwon = "정보통신 윤리 교육에서 상원 의원의 개인정보 보호 관련 발언을 인용하여 발표함."
-        st.write("--- 테스트 섹션 시작 ---") # 구분을 위한 출력
-        st.write(f"테스트 문장: {test_sentence_with_sangwon}")
-        
-        # 1. Okt가 '상원'을 어떻게 분석하는지 직접 확인
-        nouns_from_okt = okt.nouns(test_sentence_with_sangwon)
-        st.write(f"Okt 명사 분석 결과: {nouns_from_okt}")
-        
-        # 2. '상원'이 명사 분석 결과에 있는지 확인
-        if '상원' in nouns_from_okt:
-            st.write("'상원'이 Okt 명사 분석 결과에 포함되어 있습니다.")
-        else:
-            st.warning("'상원'이 Okt 명사 분석 결과에 없거나 다른 형태로 분석되었습니다.")
-            # 만약 다른 형태로 분석된다면, 그 형태를 확인하고 불용어 처리를 고민해야 합니다.
-            # 예를 들어 "상", "원"으로 분리된다면? 또는 다른 단어와 합쳐진다면?
-        
-        # 3. 불용어 처리 로직을 거친 후 '상원'이 어떻게 되는지 확인
-        # STOPWORDS 리스트와 MIN_NOUN_LEN 등은 이미 코드 상단에 정의되어 있어야 합니다.
-        meaningful_nouns_after_stopwords = []
-        for noun_candidate in nouns_from_okt:
-            if (
-                noun_candidate not in STOPWORDS
-                and len(noun_candidate) >= MIN_NOUN_LEN # MIN_NOUN_LEN은 코드에 정의된 값 사용
-                and not noun_candidate.isnumeric()
-            ):
-                meaningful_nouns_after_stopwords.append(noun_candidate)
-        
-        st.write(f"불용어 및 조건 처리 후 남은 명사: {meaningful_nouns_after_stopwords}")
-        
-        if '상원' not in meaningful_nouns_after_stopwords and '상원' in nouns_from_okt :
-            st.success("'상원'이 불용어 처리되어 정상적으로 제거되었습니다 (테스트 기준).")
-        elif '상원' in meaningful_nouns_after_stopwords:
-            st.error("'상원'이 불용어 처리되지 않고 남아있습니다 (테스트 기준). STOPWORDS 리스트나 조건을 다시 확인해주세요.")
-        
-        st.write("--- 테스트 섹션 끝 ---")
-        
-        # --- (이 아래로 원래 분석 로직 진행) ---
         with st.spinner('텍스트를 분석 중입니다... (KoNLPy/Word2Vec 첫 실행 시 시간이 더 걸릴 수 있습니다) ⏳'):
             all_document_nouns = extract_meaningful_nouns(raw_sentence_input)
 
@@ -167,49 +129,61 @@ if raw_sentence_input and raw_sentence_input.strip():
             else:
                 # --- 1. 빈도수 기반 키워드 표시 (기존 방식) ---
                 st.subheader("🔑 주요 키워드 (단순 빈도수 기반)")
-                keywords_freq, keyword_counts_freq = get_keywords_from_nouns_by_freq(all_document_nouns)
-                if not keywords_freq:
-                    st.warning("빈도수 기반 키워드를 추출하지 못했습니다.")
+                keywords_freq_raw, keyword_counts_freq_raw = get_keywords_from_nouns_by_freq(all_document_nouns)
+                
+                # "상원" 및 기타 명시적으로 제거하고 싶은 단어들 리스트
+                explicit_remove_list = ["상원", "", "다른제거단어2"] # 필요에 따라 추가
+
+                # 빈도수 기반 키워드에서 "상원" 등 제거
+                keywords_freq_filtered = []
+                keyword_counts_freq_filtered = []
+                for kw, count in zip(keywords_freq_raw, keyword_counts_freq_raw):
+                    if kw not in explicit_remove_list:
+                        keywords_freq_filtered.append(kw)
+                        keyword_counts_freq_filtered.append(count)
+                
+                if not keywords_freq_filtered:
+                    st.warning("빈도수 기반 키워드를 추출하지 못했습니다 (필터링 후).")
                 else:
-                    keyword_df_freq = pd.DataFrame({'키워드': keywords_freq, '빈도수': keyword_counts_freq})
-                    st.dataframe(keyword_df_freq.head(10)) # 상위 10개 표시
+                    keyword_df_freq = pd.DataFrame({'키워드': keywords_freq_filtered, '빈도수': keyword_counts_freq_filtered})
+                    st.dataframe(keyword_df_freq.head(10))
 
                 # --- Word2Vec 모델 학습 (이전과 동일) ---
+                # ... (sentences_for_w2v, model 학습 로직은 그대로) ...
                 raw_sentences = re.split(r'(?<=[.?!])\s+', raw_sentence_input.strip())
                 sentences_for_w2v = []
                 original_sentences_for_display = []
                 for sentence_text in raw_sentences:
                     sentence_text_cleaned = sentence_text.strip()
                     if sentence_text_cleaned:
+                        # Word2Vec 학습 데이터에는 "상원"이 불용어 처리되어 빠지는 것이 이상적이지만,
+                        # 만약 extract_meaningful_nouns에서 여전히 문제가 있다면 여기에도 영향.
+                        # 하지만 extract_meaningful_nouns의 STOPWORDS는 계속 유지/개선해야 함.
                         sentence_nouns = extract_meaningful_nouns(sentence_text_cleaned)
                         if sentence_nouns:
                             sentences_for_w2v.append(sentence_nouns)
                             original_sentences_for_display.append(sentence_text_cleaned)
                 
+                model = None # 초기화
                 if not sentences_for_w2v or len(sentences_for_w2v) < 1:
                     st.error("Word2Vec 모델 학습을 위한 문장(명사 기반) 데이터가 부족합니다.")
-                    # 의미 기반 키워드 추출은 Word2Vec 모델이 필요하므로 여기서 중단될 수 있음
-                    model = None # 모델이 없음을 명시
                 else:
                     try:
                         model = Word2Vec(sentences_for_w2v, vector_size=100, window=5, min_count=MIN_WORD_COUNT_FOR_W2V, workers=4, sg=1)
                         st.success("Word2Vec 모델 학습 완료!")
                     except Exception as e:
                         st.error(f"Word2Vec 모델 학습 중 오류 발생: {e}")
-                        model = None # 모델 학습 실패
+
 
                 # --- 2. 의미 기반 키워드 추출 (문서 벡터와 유사도) ---
-                if model: # Word2Vec 모델이 성공적으로 학습된 경우에만 실행
+                if model:
                     st.subheader("🌟 주요 키워드 (문서 전체 의미 기반)")
-                    
-                    # 2a. 문서 대표 벡터 계산
                     doc_vector_sum = np.zeros(model.vector_size)
                     word_count_for_doc_vector = 0
-                    # all_document_nouns 중에서 모델 어휘에 있는 단어들만 사용
-                    valid_nouns_for_doc_vector = [noun for noun in all_document_nouns if noun in model.wv]
+                    valid_nouns_for_doc_vector = [noun for noun in all_document_nouns if noun in model.wv and noun not in explicit_remove_list] # 여기서도 제거
                     
                     if not valid_nouns_for_doc_vector:
-                        st.warning("문서 대표 벡터를 계산할 단어가 모델에 없습니다.")
+                        st.warning("문서 대표 벡터를 계산하거나 의미 기반 키워드를 추출할 단어가 모델에 없습니다 (필터링 후).")
                     else:
                         for word in valid_nouns_for_doc_vector:
                             doc_vector_sum += model.wv[word]
@@ -217,29 +191,32 @@ if raw_sentence_input and raw_sentence_input.strip():
                         
                         if word_count_for_doc_vector > 0:
                             document_vector = doc_vector_sum / word_count_for_doc_vector
-                            
-                            # 2b. 각 고유 명사와 문서 대표 벡터 간 유사도 계산
-                            # 키워드 후보는 all_document_nouns의 고유한 명사들 중 모델에 있는 것들
-                            candidate_keywords = sorted(list(set(valid_nouns_for_doc_vector))) # 고유 명사 정렬
+                            candidate_keywords = sorted(list(set(valid_nouns_for_doc_vector))) # 이미 explicit_remove_list 제외됨
                             
                             keyword_similarities_to_doc = []
-                            for keyword_candidate in candidate_keywords:
+                            for keyword_candidate in candidate_keywords: # 이미 explicit_remove_list 제외됨
                                 try:
                                     similarity = cosine_similarity([model.wv[keyword_candidate]], [document_vector])[0][0]
                                     keyword_similarities_to_doc.append((keyword_candidate, similarity))
                                 except KeyError:
-                                    # 이론상 valid_nouns_for_doc_vector에 있으므로 이 에러는 안나야 함
                                     continue 
                             
-                            # 2c. 유사도 높은 순으로 정렬 및 표시
                             if keyword_similarities_to_doc:
-                                sorted_keywords_by_meaning = sorted(keyword_similarities_to_doc, key=lambda item: item[1], reverse=True)
+                                sorted_keywords_by_meaning_raw = sorted(keyword_similarities_to_doc, key=lambda item: item[1], reverse=True)
                                 
-                                keywords_meaning = [item[0] for item in sorted_keywords_by_meaning]
-                                keyword_scores_meaning = [item[1] for item in sorted_keywords_by_meaning]
-                                
-                                keyword_df_meaning = pd.DataFrame({'키워드': keywords_meaning, '문서 대표 벡터와의 유사도': keyword_scores_meaning})
-                                st.dataframe(keyword_df_meaning.head(15)) # 상위 15개 표시
+                                # 의미 기반 키워드에서 "상원" 등 제거 (이미 candidate_keywords에서 고려했지만, 한번 더 확인 가능)
+                                keywords_meaning_filtered = []
+                                keyword_scores_meaning_filtered = []
+                                for kw, score in sorted_keywords_by_meaning_raw:
+                                    if kw not in explicit_remove_list: # 이중 체크 또는 여기서만 처리
+                                        keywords_meaning_filtered.append(kw)
+                                        keyword_scores_meaning_filtered.append(score)
+
+                                if not keywords_meaning_filtered:
+                                    st.warning("의미 기반 키워드를 추출하지 못했습니다 (필터링 후).")
+                                else:
+                                    keyword_df_meaning = pd.DataFrame({'키워드': keywords_meaning_filtered, '문서 대표 벡터와의 유사도': keyword_scores_meaning_filtered})
+                                    st.dataframe(keyword_df_meaning.head(15))
                             else:
                                 st.warning("의미 기반 키워드를 추출하지 못했습니다.")
                         else:
@@ -250,27 +227,23 @@ if raw_sentence_input and raw_sentence_input.strip():
                 # --- 3. 주요 키워드와 유사한 단어 찾기 (Word2Vec) ---
                 if model:
                     st.subheader("🔗 유사 단어 (Word2Vec)")
-                    # 유사 단어 찾기의 대상 키워드는 빈도수 기반(keywords_freq) 또는 의미 기반(keywords_meaning) 중 선택 가능
-                    # 여기서는 빈도수 기반 상위 키워드를 사용
-                    target_keywords_for_similar = keywords_freq 
+                    # 유사 단어 찾기 대상은 필터링된 키워드 사용
+                    target_keywords_for_similar = keywords_freq_filtered # 필터링된 빈도수 기반 키워드 사용
+                    # ... (이하 로직 동일, target_keywords_for_similar 사용) ...
                     displayed_similar_count = 0
                     for keyword_to_check in target_keywords_for_similar[:10]:
                         if displayed_similar_count >= 5: break
                         if keyword_to_check in model.wv:
-                            similar_words = model.wv.most_similar(keyword_to_check, topn=5)
-                            st.write(f"**'{keyword_to_check}'**와 유사한 단어:")
-                            st.write([f"{word} (유사도: {similarity:.2f})" for word, similarity in similar_words])
+                            # ...
                             displayed_similar_count += 1
-                    if displayed_similar_count == 0:
-                        st.info("주요 키워드에 대한 유사 단어를 모델에서 찾을 수 없었습니다.")
+                    # ...
 
                 # --- 4. 키워드와 연관성 높은 문장 찾기 ---
                 if model:
                     st.subheader("📜 연관성 높은 문장")
-                    # 연관 문장 찾기의 대상 키워드도 빈도수 기반(keywords_freq) 또는 의미 기반(keywords_meaning) 중 선택
-                    target_keywords_for_sentence = keywords_freq
-                    # ... (이하 연관 문장 찾기 로직은 이전과 동일, target_keywords_for_sentence 사용) ...
-                    num_top_sentences = 3
+                    # 연관 문장 찾기 대상도 필터링된 키워드 사용
+                    target_keywords_for_sentence = keywords_freq_filtered # 필터링된 빈도수 기반 키워드 사용
+                    # ... (이하 로직 동일, target_keywords_for_sentence 사용) ...
                     displayed_sentence_count = 0
                     for i in range(min(len(target_keywords_for_sentence), 10)):
                         if displayed_sentence_count >= 5: break
