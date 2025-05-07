@@ -120,45 +120,45 @@ else:
 if raw_sentence_input and raw_sentence_input.strip():
     if st.button("분석 시작 ✨"):
         # --- Streamlit UI 또는 분석 시작 버튼 로직 내부에 임시로 추가 ---
-
-# 예시 텍스트 (실제 생기부에서 "상원"이 포함된 문장을 가져오면 더 정확합니다)
-test_sentence_with_sangwon = "정보통신 윤리 교육에서 상원 의원의 개인정보 보호 관련 발언을 인용하여 발표함."
-st.write("--- 테스트 섹션 시작 ---") # 구분을 위한 출력
-st.write(f"테스트 문장: {test_sentence_with_sangwon}")
-
-# 1. Okt가 '상원'을 어떻게 분석하는지 직접 확인
-nouns_from_okt = okt.nouns(test_sentence_with_sangwon)
-st.write(f"Okt 명사 분석 결과: {nouns_from_okt}")
-
-# 2. '상원'이 명사 분석 결과에 있는지 확인
-if '상원' in nouns_from_okt:
-    st.write("'상원'이 Okt 명사 분석 결과에 포함되어 있습니다.")
-else:
-    st.warning("'상원'이 Okt 명사 분석 결과에 없거나 다른 형태로 분석되었습니다.")
-    # 만약 다른 형태로 분석된다면, 그 형태를 확인하고 불용어 처리를 고민해야 합니다.
-    # 예를 들어 "상", "원"으로 분리된다면? 또는 다른 단어와 합쳐진다면?
-
-# 3. 불용어 처리 로직을 거친 후 '상원'이 어떻게 되는지 확인
-# STOPWORDS 리스트와 MIN_NOUN_LEN 등은 이미 코드 상단에 정의되어 있어야 합니다.
-meaningful_nouns_after_stopwords = []
-for noun_candidate in nouns_from_okt:
-    if (
-        noun_candidate not in STOPWORDS
-        and len(noun_candidate) >= MIN_NOUN_LEN # MIN_NOUN_LEN은 코드에 정의된 값 사용
-        and not noun_candidate.isnumeric()
-    ):
-        meaningful_nouns_after_stopwords.append(noun_candidate)
-
-st.write(f"불용어 및 조건 처리 후 남은 명사: {meaningful_nouns_after_stopwords}")
-
-if '상원' not in meaningful_nouns_after_stopwords and '상원' in nouns_from_okt :
-    st.success("'상원'이 불용어 처리되어 정상적으로 제거되었습니다 (테스트 기준).")
-elif '상원' in meaningful_nouns_after_stopwords:
-    st.error("'상원'이 불용어 처리되지 않고 남아있습니다 (테스트 기준). STOPWORDS 리스트나 조건을 다시 확인해주세요.")
-
-st.write("--- 테스트 섹션 끝 ---")
-
-# --- (이 아래로 원래 분석 로직 진행) ---
+        
+        # 예시 텍스트 (실제 생기부에서 "상원"이 포함된 문장을 가져오면 더 정확합니다)
+        test_sentence_with_sangwon = "정보통신 윤리 교육에서 상원 의원의 개인정보 보호 관련 발언을 인용하여 발표함."
+        st.write("--- 테스트 섹션 시작 ---") # 구분을 위한 출력
+        st.write(f"테스트 문장: {test_sentence_with_sangwon}")
+        
+        # 1. Okt가 '상원'을 어떻게 분석하는지 직접 확인
+        nouns_from_okt = okt.nouns(test_sentence_with_sangwon)
+        st.write(f"Okt 명사 분석 결과: {nouns_from_okt}")
+        
+        # 2. '상원'이 명사 분석 결과에 있는지 확인
+        if '상원' in nouns_from_okt:
+            st.write("'상원'이 Okt 명사 분석 결과에 포함되어 있습니다.")
+        else:
+            st.warning("'상원'이 Okt 명사 분석 결과에 없거나 다른 형태로 분석되었습니다.")
+            # 만약 다른 형태로 분석된다면, 그 형태를 확인하고 불용어 처리를 고민해야 합니다.
+            # 예를 들어 "상", "원"으로 분리된다면? 또는 다른 단어와 합쳐진다면?
+        
+        # 3. 불용어 처리 로직을 거친 후 '상원'이 어떻게 되는지 확인
+        # STOPWORDS 리스트와 MIN_NOUN_LEN 등은 이미 코드 상단에 정의되어 있어야 합니다.
+        meaningful_nouns_after_stopwords = []
+        for noun_candidate in nouns_from_okt:
+            if (
+                noun_candidate not in STOPWORDS
+                and len(noun_candidate) >= MIN_NOUN_LEN # MIN_NOUN_LEN은 코드에 정의된 값 사용
+                and not noun_candidate.isnumeric()
+            ):
+                meaningful_nouns_after_stopwords.append(noun_candidate)
+        
+        st.write(f"불용어 및 조건 처리 후 남은 명사: {meaningful_nouns_after_stopwords}")
+        
+        if '상원' not in meaningful_nouns_after_stopwords and '상원' in nouns_from_okt :
+            st.success("'상원'이 불용어 처리되어 정상적으로 제거되었습니다 (테스트 기준).")
+        elif '상원' in meaningful_nouns_after_stopwords:
+            st.error("'상원'이 불용어 처리되지 않고 남아있습니다 (테스트 기준). STOPWORDS 리스트나 조건을 다시 확인해주세요.")
+        
+        st.write("--- 테스트 섹션 끝 ---")
+        
+        # --- (이 아래로 원래 분석 로직 진행) ---
         with st.spinner('텍스트를 분석 중입니다... (KoNLPy/Word2Vec 첫 실행 시 시간이 더 걸릴 수 있습니다) ⏳'):
             all_document_nouns = extract_meaningful_nouns(raw_sentence_input)
 
