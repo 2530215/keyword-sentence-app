@@ -265,7 +265,7 @@ if raw_sentence_input and raw_sentence_input.strip():
                         if sentence_similarities:
                             st.markdown(f"--- \n#### '{main_keyword}' 관련 문장:")
                             sorted_sentences = sorted(sentence_similarities, key=lambda x: x['similarity'], reverse=True)
-                            num_top_sentences = 5
+                            num_top_sentences = 3
                             for item in sorted_sentences[:num_top_sentences]:
                                 st.markdown(f"> {item['sentence']} *(유사도: {item['similarity']:.3f})*")
                             displayed_sentence_count +=1
