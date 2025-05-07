@@ -8,6 +8,8 @@ import re
 from konlpy.tag import Okt
 import fitz
 from github import Github
+import requests
+import json
 
 # --- Okt 형태소 분석기 초기화 ---
 okt = Okt()
@@ -327,37 +329,65 @@ if submit_button:
         try:
             # Streamlit Secrets에서 토큰 및 저장소 정보 가져오기
             gh_token = st.secrets.get("GITHUB_TOKEN")
-            repo_name = st.secrets.get("GITHUB_REPO")
+            repo_name = st.secrets.get("GITHUB_REPO") # 예: "사용자이름/저장소이름"
 
             if not gh_token or not repo_name:
                 st.error("GitHub 토큰 또는 저장소 정보가 설정되지 않았습니다. 앱 관리자에게 문의하세요.")
             else:
-                g = Github(gh_token)
-                repo = g.get_repo(repo_name)
+                # 1. GitHub API에 요청을 보낼 주소(URL)를 만듭니다.
+                #    f"..." 형태는 문자열 중간에 변수 값을 넣을 수 있게 해줍니다.
+                url = f"https://api.github.com/repos/{repo_name}/issues"
 
-                # 이슈 제목 및 본문 구성 (피드백 유형 제거)
+                # 2. GitHub 이슈로 만들 제목과 내용을 준비합니다.
                 submitter_id_for_title = user_info.strip() if user_info.strip() else "익명 사용자"
-                # 피드백 내용의 일부를 제목에 포함시키거나, 단순히 "피드백 제출" 등으로 할 수 있습니다.
-                # 여기서는 제출자 정보만으로 제목을 구성합니다.
                 issue_title = f"피드백 제출: {submitter_id_for_title}"
-
-                issue_body = f"""
+                issue_body_text = f"""
 **제출자 정보 (상품 증정용, 선택 사항):** {user_info.strip() if user_info.strip() else "미입력"}
 ---
 **내용:**
 {feedback_text}
 """
-                # 이슈 생성
-                created_issue = repo.create_issue(title=issue_title, body=issue_body)
-                st.success("소중한 피드백이 성공적으로 제출되었습니다! 감사합니다.")
-                st.markdown(f"제출된 내용은 [여기]({created_issue.html_url})에서 (개발자가) 확인할 수 있습니다.")
-                st.info("피드백 내용은 GitHub 저장소의 'Issues' 탭에 기록됩니다.")
+                # 3. GitHub API로 보낼 데이터를 딕셔너리 형태로 만듭니다.
+                #    API 명세에 따라 'title'과 'body'라는 키를 사용합니다.
+                payload = {
+                    "title": issue_title,
+                    "body": issue_body_text
+                }
+
+                # 4. HTTP 요청을 보낼 때 필요한 추가 정보(헤더)를 만듭니다.
+                headers = {
+                    "Authorization": f"token {gh_token}", # 내가 GitHub 사용자임을 알리는 인증 토큰
+                    "Accept": "application/vnd.github.v3+json", # GitHub API의 특정 버전을 사용하겠다는 표시
+                    "Content-Type": "application/json; charset=utf-8" # ★★★ 내가 보내는 데이터는 JSON 형식이고, UTF-8 (한글 포함 가능) 방식으로 되어있다는 것을 명시! ★★★
+                }
+
+                # 5. requests 라이브러리를 사용해 실제로 GitHub API에 POST 요청을 보냅니다.
+                #    json.dumps(payload)는 위에서 만든 딕셔너리를 JSON 문자열로 바꿔줍니다.
+                #    .encode('utf-8')은 이 문자열을 UTF-8 바이트 형태로 바꿔줍니다. (데이터 전송 시 안전)
+                response = requests.post(url, headers=headers, data=json.dumps(payload).encode('utf-8'))
+
+                # 6. GitHub API로부터 받은 응답을 확인합니다.
+                if response.status_code == 201: # 201 코드는 "성공적으로 생성됨"을 의미합니다.
+                    created_issue_data = response.json() # 응답 내용을 JSON(딕셔너리) 형태로 변환
+                    st.success("소중한 피드백이 성공적으로 제출되었습니다! 감사합니다.")
+                    # 응답에서 생성된 이슈의 웹 주소(html_url)를 가져와 링크를 만듭니다.
+                    st.markdown(f"제출된 내용은 [여기]({created_issue_data.get('html_url')})에서 (개발자가) 확인할 수 있습니다.")
+                    st.info("피드백 내용은 GitHub 저장소의 'Issues' 탭에 기록됩니다.")
+                else: # 문제가 생겼을 경우
+                    st.error(f"피드백 제출에 실패했습니다. (상태 코드: {response.status_code})")
+                    st.error(f"오류 메시지: {response.text}") # GitHub API가 알려주는 오류 내용을 보여줍니다.
 
         except Exception as e:
-            st.error(f"피드백 제출 중 오류가 발생했습니다: {e}")
+            st.error(f"피드백 제출 중 예상치 못한 오류가 발생했습니다.")
+            st.error(f"오류 내용: {str(e)}")
             st.error("잠시 후 다시 시도해주세요. 문제가 지속되면 앱 관리자에게 알려주세요.")
+            # 개발자 확인용 상세 오류 (Streamlit Cloud 로그에서 확인)
+            import traceback
+            print(f"GitHub Issue 생성 오류 (requests 사용): {e}")
+            print(traceback.format_exc())
     else: # 피드백 내용이 비어있다면
         st.error("피드백 내용을 작성해주세요! 😅")
+
 
 st.sidebar.markdown("---")
 st.sidebar.caption("Made with Streamlit, KoNLPy, PyMuPDF & Word2Vec")
