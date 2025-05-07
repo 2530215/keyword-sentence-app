@@ -23,6 +23,7 @@ STOPWORDS = [
     '뛰어남', '우수함', '보임', '발휘함', '참여함', '탐구함', '발전함', '향상됨', '함양함',
     '만듦', '발표함', '제시함', '제출함', '바', '점', '측면', '과제', '조사', '주제',
     '자료', '발표', '토론', '보고서', '탐구', '연구', '프로젝트', '실험', '수업', '시간'
+    '이용','참여'
 ]
 MIN_NOUN_LEN = 2 # 추출할 명사의 최소 길이 (한 글자 명사 제외)
 MIN_WORD_COUNT_FOR_W2V = 1 # Word2Vec 학습 시 단어의 최소 등장 빈도
@@ -120,26 +121,8 @@ if st.button("분석 시작 ✨"):
                             model = Word2Vec(sentences_for_w2v, vector_size=100, window=5, min_count=MIN_WORD_COUNT_FOR_W2V, workers=4, sg=1)
                             st.success("Word2Vec 모델 학습 완료! (문장 내 명사 기반)")
 
-                            '''
-                            # 3. 주요 키워드와 유사한 단어 찾기
-                            st.subheader("🔗 주요 키워드와 유사한 단어 (Word2Vec)")
-                            num_similar_words_to_show = 5
-                            displayed_similar_count = 0
-                            for keyword_to_check in keywords[:10]: # 상위 10개 키워드에 대해 시도
-                                if displayed_similar_count >= 5: # 최대 5개 키워드에 대해서만 유사 단어 표시
-                                    break
-                                if keyword_to_check in model.wv:
-                                    similar_words = model.wv.most_similar(keyword_to_check, topn=num_similar_words_to_show)
-                                    st.write(f"**'{keyword_to_check}'**와 유사한 단어:")
-                                    st.write([f"{word} (유사도: {similarity:.2f})" for word, similarity in similar_words])
-                                    displayed_similar_count +=1
-                                # else:
-                                #     st.write(f"'{keyword_to_check}'는(은) 학습된 모델의 어휘 사전에 없습니다.")
-                            if displayed_similar_count == 0:
-                                st.info("주요 키워드에 대한 유사 단어를 모델에서 찾을 수 없었습니다. (데이터 부족 또는 min_count 설정 확인)")
-                            '''
 
-                            # 4. 키워드와 연관성 높은 문장 찾기
+                            # 3. 키워드와 연관성 높은 문장 찾기
                             st.subheader("📜 키워드와 연관성 높은 문장")
                             num_top_sentences = 3 # 각 키워드별로 보여줄 상위 문장 수
                             displayed_sentence_count = 0
