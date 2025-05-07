@@ -7,7 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 from konlpy.tag import Okt
 import fitz
-from github import Github
+#from github import Github
 import requests
 import json
 
@@ -226,21 +226,7 @@ if raw_sentence_input and raw_sentence_input.strip():
                 else:
                     st.warning("Word2Vec 모델이 없어 의미 기반 키워드를 추출할 수 없습니다.")
 
-                # --- 3. 주요 키워드와 유사한 단어 찾기 (Word2Vec) ---
-                if model:
-                    st.subheader("🔗 유사 단어 (Word2Vec)")
-                    # 유사 단어 찾기 대상은 필터링된 키워드 사용
-                    target_keywords_for_similar = keywords_freq_filtered # 필터링된 빈도수 기반 키워드 사용
-                    # ... (이하 로직 동일, target_keywords_for_similar 사용) ...
-                    displayed_similar_count = 0
-                    for keyword_to_check in target_keywords_for_similar[:10]:
-                        if displayed_similar_count >= 5: break
-                        if keyword_to_check in model.wv:
-                            # ...
-                            displayed_similar_count += 1
-                    # ...
-
-                # --- 4. 키워드와 연관성 높은 문장 찾기 ---
+                # --- 3. 키워드와 연관성 높은 문장 찾기 ---
                 if model:
                     st.subheader("📜 연관성 높은 문장")
                     # 연관 문장 찾기 대상도 필터링된 키워드 사용
