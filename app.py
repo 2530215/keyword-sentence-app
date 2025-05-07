@@ -287,6 +287,7 @@ st.sidebar.markdown(f"""
 
 st.markdown("---") # 구분선 추가
 st.header("📝 프로그램 피드백")
+st.markdown("상품을 받으려면 구글 폼 링크를 통해 피드백을 작성해 주세요!")
 st.markdown("[구글 폼 링크](https://docs.google.com/forms/d/e/1FAIpQLSdqbJDR3ASS1IXqSh2dyo15xrl08sefT9N3-p7bJ1XzyWhvew/viewform?usp=header)", unsafe_allow_html=True)
 
 
