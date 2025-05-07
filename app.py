@@ -47,7 +47,7 @@ STOPWORDS = [
     '기록함', '기재함', '작성함',
     '됨', '함', '높음', '낮음', '많음', '적음',
     '기대됨', '요망됨'
-    '상원','고등학교','상원고등학교','번호','표현','설명','표현','이름'
+    '상원','고등학교','상원고등학교','번호','표현','설명','이름'
 ]
 MIN_NOUN_LEN = 2
 MIN_WORD_COUNT_FOR_W2V = 1
@@ -132,7 +132,7 @@ if raw_sentence_input and raw_sentence_input.strip():
                 keywords_freq_raw, keyword_counts_freq_raw = get_keywords_from_nouns_by_freq(all_document_nouns)
                 
                 # "상원" 및 기타 명시적으로 제거하고 싶은 단어들 리스트
-                explicit_remove_list = ["상원", "", "다른제거단어2"] # 필요에 따라 추가
+                explicit_remove_list = ["상원"] # 필요에 따라 추가
 
                 # 빈도수 기반 키워드에서 "상원" 등 제거
                 keywords_freq_filtered = []
