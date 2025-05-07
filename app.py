@@ -124,7 +124,9 @@ raw_sentence_input = None # 초기화
 
 # --- 더 간단한 입력 방식: 파일 업로더와 텍스트 영역을 모두 표시하고, 파일이 있으면 파일 우선 ---
 st.subheader("1. 분석할 생기부 데이터 입력")
-st.markdown("이 링크는 [새 탭에서 Naver](https://www.naver.com)가 열립니다.", unsafe_allow_html=True) # 일반 마크다운은 target 지원 안함
+st.markdown("[정부24에서 생기부 pdf 다운받는법](https://blog.naver.com/leeyju4/223208661500)", unsafe_allow_html=True) # 일반 마크다운은 target 지원 안함
+st.markdown("[카카오톡에서 생기부 pdf 다운받는법](https://blog.naver.com/needtime0514/223256443411)", unsafe_allow_html=True) # 일반 마크다운은 target 지원 안함
+
 uploaded_pdf_file = st.file_uploader("생기부 PDF 파일 업로드 (PDF 업로드 시 아래 텍스트 입력 내용은 무시됩니다):", type="pdf")
 raw_sentence_input_area = st.text_area("또는, 생기부 내용을 여기에 직접 붙여넣으세요:", height=200, placeholder="PDF를 업로드하지 않을 경우 여기에 텍스트를 입력해주세요...")
 
