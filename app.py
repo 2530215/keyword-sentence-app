@@ -6,15 +6,13 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 from konlpy.tag import Okt
-import fitz  # PyMuPDF 라이브러리 임포트
+import fitz
 
 # --- Okt 형태소 분석기 초기화 ---
 okt = Okt()
 
-# --- 불용어 및 기본 설정 (이전과 동일하게 유지 또는 사용자 정의 목록 사용) ---
-STOPWORDS = [ # 사용자의 최신 불용어 목록으로 교체해주세요
-    # 예시: '수', '것', '때', '등', ...
-    # (이전에 제공된 길고 구체적인 불용어 목록을 여기에 넣어주세요)
+# --- 불용어 및 기본 설정 (사용자님의 최신 불용어 목록 사용) ---
+STOPWORDS = [
     '이', '그', '저', '것', '수', '때', '등', '및', '년', '월', '일', '좀', '중', '위해',
     '그것', '이것', '저것', '여기', '저기', '거기', '자신', '자체', '대한', '통해', '관련',
     '여러', '가지', '다른', '부분', '경우', '정도', '사이', '문제', '내용', '결과', '과정',
@@ -52,12 +50,10 @@ STOPWORDS = [ # 사용자의 최신 불용어 목록으로 교체해주세요
 MIN_NOUN_LEN = 2
 MIN_WORD_COUNT_FOR_W2V = 1
 
-# --- PDF 텍스트 추출 함수 ---
+# --- PDF 텍스트 추출 함수 (이전과 동일) ---
 def extract_text_from_pdf(uploaded_file):
-    """PyMuPDF를 사용하여 업로드된 PDF 파일에서 텍스트를 추출합니다."""
     text = ""
     try:
-        # 업로드된 파일은 BytesIO 객체이므로, stream으로 바로 열 수 있습니다.
         pdf_document = fitz.open(stream=uploaded_file.read(), filetype="pdf")
         for page_num in range(len(pdf_document)):
             page = pdf_document.load_page(page_num)
@@ -65,11 +61,10 @@ def extract_text_from_pdf(uploaded_file):
         pdf_document.close()
     except Exception as e:
         st.error(f"PDF 처리 중 오류 발생: {e}")
-        st.error("올바른 PDF 파일인지, 손상되지 않았는지 확인해주세요. 암호화된 PDF는 처리할 수 없습니다.")
         return None
     return text
 
-# --- 기존 함수들 (extract_meaningful_nouns, get_keywords_from_nouns) 은 동일하게 사용 ---
+# --- 명사 추출 함수 (이전과 동일) ---
 def extract_meaningful_nouns(text):
     text = re.sub(r"[^가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9\s.]+", "", str(text)).strip()
     text = re.sub(r"\s+", " ", text)
@@ -81,7 +76,8 @@ def extract_meaningful_nouns(text):
             meaningful_nouns.append(noun)
     return meaningful_nouns
 
-def get_keywords_from_nouns(noun_list):
+# --- 빈도수 기반 키워드 추출 함수 (이전과 동일) ---
+def get_keywords_from_nouns_by_freq(noun_list): # 함수 이름 변경
     if not noun_list: return [], []
     word_counts = Counter(noun_list)
     sorted_keywords_with_counts = word_counts.most_common()
@@ -89,165 +85,182 @@ def get_keywords_from_nouns(noun_list):
     wordsetcount = [item[1] for item in sorted_keywords_with_counts]
     return wordset, wordsetcount
 
-# --- Streamlit UI ---
+# --- Streamlit UI (일부만 표시, 핵심 로직 위주) ---
 st.set_page_config(page_title="생기부 분석기", layout="wide")
 st.title("📝 생기부 키워드 분석 및 연관 문장 추천")
+# ... (UI 상단 마크다운, 파일 업로드, 텍스트 입력 부분은 이전과 거의 동일하게 유지) ...
 st.markdown("""
 KoNLPy 형태소 분석기를 사용하여 명사 위주로 키워드를 추출하고,
 Word2Vec 모델을 통해 유사 단어 및 관련 높은 문장을 찾아줍니다.
 **PDF 파일을 업로드하거나 텍스트를 직접 입력하여 분석할 수 있습니다.**
 """)
-
-# --- 입력 방식 선택 ---
-# st.subheader("1. 분석할 생기부 데이터 입력") # 소제목 추가
-# input_method = st.radio(
-#     "입력 방식을 선택하세요:",
-#     ('텍스트 직접 입력', 'PDF 파일 업로드')
-# )
-
-raw_sentence_input = None # 초기화
-# if input_method == '텍스트 직접 입력':
-#     raw_sentence_input_area = st.text_area("분석할 생기부 내용을 입력하세요:", height=250, placeholder="여기에 텍스트를 입력해주세요...")
-#     if raw_sentence_input_area.strip():
-#         raw_sentence_input = raw_sentence_input_area
-# else: # PDF 파일 업로드
-#     uploaded_pdf_file = st.file_uploader("생기부 PDF 파일을 업로드하세요.", type="pdf")
-#     if uploaded_pdf_file is not None:
-#         with st.spinner("PDF 파일을 읽고 있습니다..."):
-#             raw_sentence_input = extract_text_from_pdf(uploaded_pdf_file)
-#             if raw_sentence_input:
-#                 st.success("PDF 파일에서 텍스트를 성공적으로 추출했습니다!")
-#                 # 추출된 텍스트 일부를 보여주어 확인 (선택 사항)
-#                 # st.text_area("추출된 텍스트 (일부):", raw_sentence_input[:1000] + "...", height=100, disabled=True)
-#             else:
-#                 st.error("PDF에서 텍스트를 추출하지 못했습니다. 파일 내용을 확인해주세요.")
-
-# --- 더 간단한 입력 방식: 파일 업로더와 텍스트 영역을 모두 표시하고, 파일이 있으면 파일 우선 ---
 st.subheader("1. 분석할 생기부 데이터 입력")
-st.markdown("[정부24에서 생기부 pdf 다운받는법](https://blog.naver.com/leeyju4/223208661500)", unsafe_allow_html=True) # 일반 마크다운은 target 지원 안함
-st.markdown("[카카오톡에서 생기부 pdf 다운받는법](https://blog.naver.com/needtime0514/223256443411)", unsafe_allow_html=True) # 일반 마크다운은 target 지원 안함
+st.markdown("[정부24에서 생기부 pdf 다운받는법](https://blog.naver.com/leeyju4/223208661500)", unsafe_allow_html=True)
+st.markdown("[카카오톡에서 생기부 pdf 다운받는법](https://blog.naver.com/needtime0514/223256443411)", unsafe_allow_html=True)
 
 uploaded_pdf_file = st.file_uploader("생기부 PDF 파일 업로드 (PDF 업로드 시 아래 텍스트 입력 내용은 무시됩니다):", type="pdf")
 raw_sentence_input_area = st.text_area("또는, 생기부 내용을 여기에 직접 붙여넣으세요:", height=200, placeholder="PDF를 업로드하지 않을 경우 여기에 텍스트를 입력해주세요...")
 
+raw_sentence_input = None
 if uploaded_pdf_file is not None:
     with st.spinner("PDF 파일을 읽고 분석 준비 중입니다..."):
         extracted_text_from_pdf = extract_text_from_pdf(uploaded_pdf_file)
         if extracted_text_from_pdf:
             raw_sentence_input = extracted_text_from_pdf
             st.success("PDF 파일에서 텍스트를 성공적으로 추출했습니다!")
-            # st.info("PDF 내용으로 분석을 진행합니다.") # 사용자에게 알림
         else:
             st.error("PDF에서 텍스트를 추출하지 못했습니다. 파일이 올바른지 확인하거나, 아래 텍스트 영역에 직접 입력해주세요.")
-            # PDF 추출 실패 시 텍스트 영역 입력을 사용하도록 raw_sentence_input을 None으로 유지
 elif raw_sentence_input_area.strip():
     raw_sentence_input = raw_sentence_input_area
-    # st.info("입력된 텍스트로 분석을 진행합니다.")
 else:
-    # 파일도 없고 텍스트 입력도 없는 경우
     pass
 
-
-# --- 분석 시작 버튼 및 로직 (raw_sentence_input이 채워졌을 때만 활성화되도록) ---
-if raw_sentence_input and raw_sentence_input.strip(): # raw_sentence_input이 None이 아니고, 공백만 있는 문자열이 아닐 때
+if raw_sentence_input and raw_sentence_input.strip():
     if st.button("분석 시작 ✨"):
-        with st.spinner('텍스트를 분석 중입니다... 잠시만 기다려주세요 (KoNLPy 첫 실행 시 시간이 더 걸릴 수 있습니다) ⏳'):
-            # (이하 분석 로직은 이전과 거의 동일. raw_sentence_input을 사용)
-            # 1. 전체 문서에서 의미 있는 명사 추출 (키워드 분석용)
+        with st.spinner('텍스트를 분석 중입니다... (KoNLPy/Word2Vec 첫 실행 시 시간이 더 걸릴 수 있습니다) ⏳'):
             all_document_nouns = extract_meaningful_nouns(raw_sentence_input)
 
             if not all_document_nouns:
                 st.error("분석할 의미 있는 명사가 없습니다. 입력 내용을 확인하거나 불용어 설정을 점검해주세요.")
             else:
-                st.subheader("🔑 주요 키워드 (명사, 빈도순)")
-                keywords, keyword_counts = get_keywords_from_nouns(all_document_nouns)
-                
-                if not keywords:
-                    st.warning("키워드를 추출하지 못했습니다.")
+                # --- 1. 빈도수 기반 키워드 표시 (기존 방식) ---
+                st.subheader("🔑 주요 키워드 (단순 빈도수 기반)")
+                keywords_freq, keyword_counts_freq = get_keywords_from_nouns_by_freq(all_document_nouns)
+                if not keywords_freq:
+                    st.warning("빈도수 기반 키워드를 추출하지 못했습니다.")
                 else:
-                    keyword_df = pd.DataFrame({'키워드': keywords, '빈도수': keyword_counts})
-                    st.dataframe(keyword_df.head(15))
+                    keyword_df_freq = pd.DataFrame({'키워드': keywords_freq, '빈도수': keyword_counts_freq})
+                    st.dataframe(keyword_df_freq.head(10)) # 상위 10개 표시
 
-                    # 2. Word2Vec 모델 학습을 위한 문장 단위 명사 리스트 준비
-                    raw_sentences = re.split(r'(?<=[.?!])\s+', raw_sentence_input.strip())
-                    sentences_for_w2v = []
-                    original_sentences_for_display = []
+                # --- Word2Vec 모델 학습 (이전과 동일) ---
+                raw_sentences = re.split(r'(?<=[.?!])\s+', raw_sentence_input.strip())
+                sentences_for_w2v = []
+                original_sentences_for_display = []
+                for sentence_text in raw_sentences:
+                    sentence_text_cleaned = sentence_text.strip()
+                    if sentence_text_cleaned:
+                        sentence_nouns = extract_meaningful_nouns(sentence_text_cleaned)
+                        if sentence_nouns:
+                            sentences_for_w2v.append(sentence_nouns)
+                            original_sentences_for_display.append(sentence_text_cleaned)
+                
+                if not sentences_for_w2v or len(sentences_for_w2v) < 1:
+                    st.error("Word2Vec 모델 학습을 위한 문장(명사 기반) 데이터가 부족합니다.")
+                    # 의미 기반 키워드 추출은 Word2Vec 모델이 필요하므로 여기서 중단될 수 있음
+                    model = None # 모델이 없음을 명시
+                else:
+                    try:
+                        model = Word2Vec(sentences_for_w2v, vector_size=100, window=5, min_count=MIN_WORD_COUNT_FOR_W2V, workers=4, sg=1)
+                        st.success("Word2Vec 모델 학습 완료!")
+                    except Exception as e:
+                        st.error(f"Word2Vec 모델 학습 중 오류 발생: {e}")
+                        model = None # 모델 학습 실패
 
-                    for sentence_text in raw_sentences:
-                        sentence_text_cleaned = sentence_text.strip()
-                        if sentence_text_cleaned:
-                            sentence_nouns = extract_meaningful_nouns(sentence_text_cleaned)
-                            if sentence_nouns:
-                                sentences_for_w2v.append(sentence_nouns)
-                                original_sentences_for_display.append(sentence_text_cleaned)
+                # --- 2. 의미 기반 키워드 추출 (문서 벡터와 유사도) ---
+                if model: # Word2Vec 모델이 성공적으로 학습된 경우에만 실행
+                    st.subheader("🌟 주요 키워드 (문서 전체 의미 기반)")
                     
-                    if not sentences_for_w2v or len(sentences_for_w2v) < 1 :
-                        st.error("Word2Vec 모델 학습을 위한 문장(명사 기반) 데이터가 부족합니다.")
+                    # 2a. 문서 대표 벡터 계산
+                    doc_vector_sum = np.zeros(model.vector_size)
+                    word_count_for_doc_vector = 0
+                    # all_document_nouns 중에서 모델 어휘에 있는 단어들만 사용
+                    valid_nouns_for_doc_vector = [noun for noun in all_document_nouns if noun in model.wv]
+                    
+                    if not valid_nouns_for_doc_vector:
+                        st.warning("문서 대표 벡터를 계산할 단어가 모델에 없습니다.")
                     else:
-                        try:
-                            model = Word2Vec(sentences_for_w2v, vector_size=100, window=5, min_count=MIN_WORD_COUNT_FOR_W2V, workers=4, sg=1)
-                            st.success("Word2Vec 모델 학습 완료! (문장 내 명사 기반)")
+                        for word in valid_nouns_for_doc_vector:
+                            doc_vector_sum += model.wv[word]
+                            word_count_for_doc_vector += 1
+                        
+                        if word_count_for_doc_vector > 0:
+                            document_vector = doc_vector_sum / word_count_for_doc_vector
+                            
+                            # 2b. 각 고유 명사와 문서 대표 벡터 간 유사도 계산
+                            # 키워드 후보는 all_document_nouns의 고유한 명사들 중 모델에 있는 것들
+                            candidate_keywords = sorted(list(set(valid_nouns_for_doc_vector))) # 고유 명사 정렬
+                            
+                            keyword_similarities_to_doc = []
+                            for keyword_candidate in candidate_keywords:
+                                try:
+                                    similarity = cosine_similarity([model.wv[keyword_candidate]], [document_vector])[0][0]
+                                    keyword_similarities_to_doc.append((keyword_candidate, similarity))
+                                except KeyError:
+                                    # 이론상 valid_nouns_for_doc_vector에 있으므로 이 에러는 안나야 함
+                                    continue 
+                            
+                            # 2c. 유사도 높은 순으로 정렬 및 표시
+                            if keyword_similarities_to_doc:
+                                sorted_keywords_by_meaning = sorted(keyword_similarities_to_doc, key=lambda item: item[1], reverse=True)
+                                
+                                keywords_meaning = [item[0] for item in sorted_keywords_by_meaning]
+                                keyword_scores_meaning = [item[1] for item in sorted_keywords_by_meaning]
+                                
+                                keyword_df_meaning = pd.DataFrame({'키워드': keywords_meaning, '문서 대표 벡터와의 유사도': keyword_scores_meaning})
+                                st.dataframe(keyword_df_meaning.head(15)) # 상위 15개 표시
+                            else:
+                                st.warning("의미 기반 키워드를 추출하지 못했습니다.")
+                        else:
+                             st.warning("문서 대표 벡터 계산에 사용될 유효한 단어가 없습니다.")
+                else:
+                    st.warning("Word2Vec 모델이 없어 의미 기반 키워드를 추출할 수 없습니다.")
 
-                            # 3. 주요 키워드와 유사한 단어 찾기
-                            st.subheader("🔗 주요 키워드와 유사한 단어 (Word2Vec)")
-                            # ... (이전 유사 단어 찾기 로직과 동일) ...
-                            num_similar_words_to_show = 5
-                            displayed_similar_count = 0
-                            for keyword_to_check in keywords[:10]: 
-                                if displayed_similar_count >= 5: 
-                                    break
-                                if keyword_to_check in model.wv:
-                                    similar_words = model.wv.most_similar(keyword_to_check, topn=num_similar_words_to_show)
-                                    st.write(f"**'{keyword_to_check}'**와 유사한 단어:")
-                                    st.write([f"{word} (유사도: {similarity:.2f})" for word, similarity in similar_words])
-                                    displayed_similar_count +=1
-                            if displayed_similar_count == 0:
-                                st.info("주요 키워드에 대한 유사 단어를 모델에서 찾을 수 없었습니다.")
+                # --- 3. 주요 키워드와 유사한 단어 찾기 (Word2Vec) ---
+                if model:
+                    st.subheader("🔗 유사 단어 (Word2Vec)")
+                    # 유사 단어 찾기의 대상 키워드는 빈도수 기반(keywords_freq) 또는 의미 기반(keywords_meaning) 중 선택 가능
+                    # 여기서는 빈도수 기반 상위 키워드를 사용
+                    target_keywords_for_similar = keywords_freq 
+                    displayed_similar_count = 0
+                    for keyword_to_check in target_keywords_for_similar[:10]:
+                        if displayed_similar_count >= 5: break
+                        if keyword_to_check in model.wv:
+                            similar_words = model.wv.most_similar(keyword_to_check, topn=5)
+                            st.write(f"**'{keyword_to_check}'**와 유사한 단어:")
+                            st.write([f"{word} (유사도: {similarity:.2f})" for word, similarity in similar_words])
+                            displayed_similar_count += 1
+                    if displayed_similar_count == 0:
+                        st.info("주요 키워드에 대한 유사 단어를 모델에서 찾을 수 없었습니다.")
 
-                            # 4. 키워드와 연관성 높은 문장 찾기
-                            st.subheader("📜 키워드와 연관성 높은 문장")
-                            # ... (이전 연관 문장 찾기 로직과 동일) ...
-                            num_top_sentences = 3 
-                            displayed_sentence_count = 0
-                            for i in range(min(len(keywords), 10)): 
-                                if displayed_sentence_count >= 5: 
-                                    break
-                                main_keyword = keywords[i]
-                                if main_keyword not in model.wv:
-                                    continue
-
-                                sentence_similarities = []
-                                for idx, sentence_nouns in enumerate(sentences_for_w2v): 
-                                    if not sentence_nouns: 
-                                        continue
-                                    vectors = [model.wv[token] for token in sentence_nouns if token in model.wv]
-                                    if not vectors:
-                                        continue
-                                    sentence_vector = np.mean(vectors, axis=0)
-                                    keyword_vector = model.wv[main_keyword]
-                                    similarity_score = cosine_similarity([sentence_vector], [keyword_vector])[0][0]
-                                    if idx < len(original_sentences_for_display):
-                                      sentence_similarities.append({
-                                          'sentence': original_sentences_for_display[idx],
-                                          'similarity': similarity_score
-                                      })
-                                if sentence_similarities:
-                                    st.markdown(f"--- \n#### '{main_keyword}' 관련 문장:")
-                                    sorted_sentences = sorted(sentence_similarities, key=lambda x: x['similarity'], reverse=True)
-                                    for item in sorted_sentences[:num_top_sentences]:
-                                        st.markdown(f"> {item['sentence']} *(유사도: {item['similarity']:.3f})*")
-                                    displayed_sentence_count +=1
-                            if displayed_sentence_count == 0:
-                                st.info("주요 키워드에 대한 연관 문장을 찾을 수 없었습니다.")
-                        except Exception as e:
-                            st.error(f"Word2Vec 모델 학습 또는 유사도 분석 중 오류 발생: {e}")
-                            # ... (오류 메시지)
+                # --- 4. 키워드와 연관성 높은 문장 찾기 ---
+                if model:
+                    st.subheader("📜 연관성 높은 문장")
+                    # 연관 문장 찾기의 대상 키워드도 빈도수 기반(keywords_freq) 또는 의미 기반(keywords_meaning) 중 선택
+                    target_keywords_for_sentence = keywords_freq
+                    # ... (이하 연관 문장 찾기 로직은 이전과 동일, target_keywords_for_sentence 사용) ...
+                    num_top_sentences = 3
+                    displayed_sentence_count = 0
+                    for i in range(min(len(target_keywords_for_sentence), 10)):
+                        if displayed_sentence_count >= 5: break
+                        main_keyword = target_keywords_for_sentence[i]
+                        if main_keyword not in model.wv: continue
+                        sentence_similarities = []
+                        for idx, sentence_nouns in enumerate(sentences_for_w2v):
+                            if not sentence_nouns: continue
+                            vectors = [model.wv[token] for token in sentence_nouns if token in model.wv]
+                            if not vectors: continue
+                            sentence_vector = np.mean(vectors, axis=0)
+                            keyword_vector = model.wv[main_keyword]
+                            similarity_score = cosine_similarity([sentence_vector], [keyword_vector])[0][0]
+                            if idx < len(original_sentences_for_display):
+                                sentence_similarities.append({
+                                    'sentence': original_sentences_for_display[idx],
+                                    'similarity': similarity_score
+                                })
+                        if sentence_similarities:
+                            st.markdown(f"--- \n#### '{main_keyword}' 관련 문장:")
+                            sorted_sentences = sorted(sentence_similarities, key=lambda x: x['similarity'], reverse=True)
+                            for item in sorted_sentences[:num_top_sentences]:
+                                st.markdown(f"> {item['sentence']} *(유사도: {item['similarity']:.3f})*")
+                            displayed_sentence_count +=1
+                    if displayed_sentence_count == 0:
+                        st.info("주요 키워드에 대한 연관 문장을 찾을 수 없었습니다.")
 else:
-    if not uploaded_pdf_file and not raw_sentence_input_area.strip(): # 아무것도 입력되지 않았을 때 안내
+    if not uploaded_pdf_file and not raw_sentence_input_area.strip():
         st.info("생기부 PDF 파일을 업로드하거나, 텍스트를 직접 입력해주세요.")
 
-
 # --- 사이드바 (이전과 동일) ---
+# ... (사이드바 코드는 그대로 유지) ...
 st.sidebar.header("ℹ️ 사용 방법")
 st.sidebar.markdown("""
 1.  **생기부 데이터 입력:**
@@ -255,17 +268,21 @@ st.sidebar.markdown("""
     * **텍스트 직접 입력:** PDF가 없을 경우, 아래 텍스트 영역에 내용을 붙여넣습니다.
 2.  **분석 시작:** '분석 시작 ✨' 버튼을 클릭합니다. (데이터가 입력되면 버튼이 나타납니다.)
 3.  **결과 확인:**
-    * **주요 키워드**, **유사 단어**, **연관성 높은 문장**을 확인합니다.
+    * **주요 키워드 (빈도수 기반)**: 단순히 자주 등장하는 명사입니다.
+    * **주요 키워드 (의미 기반)**: 문서 전체의 주제와 관련성이 높은 명사입니다.
+    * **유사 단어**, **연관성 높은 문장**을 확인합니다.
 
 **팁:**
 * PDF 파일은 텍스트 기반이어야 정확한 분석이 가능합니다. (이미지 스캔 PDF는 지원 X)
 * 불용어 목록은 앱 코드 내에서 직접 수정하여 분석의 질을 높일 수 있습니다.
 """)
-# ... (나머지 사이드바 내용)
 st.sidebar.header("⚙️ 설정값 정보")
 st.sidebar.markdown(f"""
 -   추출 명사 최소 길이: `{MIN_NOUN_LEN}`
 -   Word2Vec 최소 단어 빈도: `{MIN_WORD_COUNT_FOR_W2V}`
+""")
+st.sidebar.markdown("---")
+st.sidebar.caption("Made with Streamlit, KoNLPy, PyMuPDF & Word2Vec")
 """)
 st.sidebar.markdown("---")
 st.sidebar.caption("Made with Streamlit, KoNLPy & PyMuPDF")
