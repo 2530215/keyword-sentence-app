@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 from konlpy.tag import Okt
 import fitz
+from github import Github
 
 # --- Okt 형태소 분석기 초기화 ---
 okt = Okt()
@@ -282,6 +283,24 @@ st.sidebar.markdown(f"""
 -   추출 명사 최소 길이: `{MIN_NOUN_LEN}`
 -   Word2Vec 최소 단어 빈도: `{MIN_WORD_COUNT_FOR_W2V}`
 """)
+
+
+st.markdown("---") # 구분선 추가
+st.header("📝 프로그램 피드백")
+st.markdown("프로그램 사용 경험에 대한 소중한 의견을 남겨주세요! 버그 리포트, 개선 아이디어, 칭찬 모두 환영합니다. 😊")
+
+
+# 사용자 이름 또는 닉네임 입력 (선택 사항)
+user_name = st.text_input("학번+이름 (선택 사항):", placeholder="추후 상품 증정에 사용됩니다. 그 외 사용X")
+
+# 피드백 내용 입력
+feedback_text = st.text_area("피드백 내용:", placeholder="여기에 자세한 내용을 작성해주세요.", height=150)
+
+# 제출 버튼
+submit_button = st.button("피드백 제출하기")
+
+# --- 피드백 처리 로직 (다음 단계에서 구현) ---
+
 st.sidebar.markdown("---")
 st.sidebar.caption("Made with Streamlit, KoNLPy, PyMuPDF & Word2Vec")
 
