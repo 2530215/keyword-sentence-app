@@ -120,6 +120,7 @@ if st.button("분석 시작 ✨"):
                             model = Word2Vec(sentences_for_w2v, vector_size=100, window=5, min_count=MIN_WORD_COUNT_FOR_W2V, workers=4, sg=1)
                             st.success("Word2Vec 모델 학습 완료! (문장 내 명사 기반)")
 
+                            '''
                             # 3. 주요 키워드와 유사한 단어 찾기
                             st.subheader("🔗 주요 키워드와 유사한 단어 (Word2Vec)")
                             num_similar_words_to_show = 5
@@ -136,7 +137,7 @@ if st.button("분석 시작 ✨"):
                                 #     st.write(f"'{keyword_to_check}'는(은) 학습된 모델의 어휘 사전에 없습니다.")
                             if displayed_similar_count == 0:
                                 st.info("주요 키워드에 대한 유사 단어를 모델에서 찾을 수 없었습니다. (데이터 부족 또는 min_count 설정 확인)")
-
+                            '''
 
                             # 4. 키워드와 연관성 높은 문장 찾기
                             st.subheader("📜 키워드와 연관성 높은 문장")
