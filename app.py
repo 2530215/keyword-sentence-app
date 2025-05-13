@@ -12,7 +12,11 @@ import requests
 import json
 
 # --- Okt 형태소 분석기 초기화 ---
-okt = Okt()
+@st.cache_resource
+def load_okt():
+    return Okt()
+
+okt = load_okt()
 
 # --- 불용어 및 기본 설정 (사용자님의 최신 불용어 목록 사용) ---
 STOPWORDS = [
