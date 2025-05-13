@@ -234,7 +234,7 @@ if raw_sentence_input and raw_sentence_input.strip():
                     # ... (이하 로직 동일, target_keywords_for_sentence 사용) ...
                     displayed_sentence_count = 0
                     for i in range(min(len(target_keywords_for_sentence), 10)):
-                        if displayed_sentence_count >= 10: break
+                        if displayed_sentence_count >= 5: break
                         main_keyword = target_keywords_for_sentence[i]
                         if main_keyword not in model.wv: continue
                         sentence_similarities = []
