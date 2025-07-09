@@ -3,7 +3,6 @@ gensim
 pandas
 numpy
 scikit-learn
-konlpy
+nltk
 PyMuPDF
-PyGithub
 requests
