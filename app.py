@@ -5,33 +5,49 @@ import pandas as pd
 import fitz  # PyMuPDF
 from gensim.models import Word2Vec
 from sklearn.metrics.pairwise import cosine_similarity
-import nltk # NLTK 라이브러리
+import nltk
 
 # --- ================================================================== ---
-# ---               오류 해결을 위한 핵심 코드 (NLTK 설정)               ---
-# --- =================================----------------================= ---
+# ---               오류 해결을 위한 핵심 코드 (모듈 Import)               ---
+# --- ================================================================== ---
+# NLTK의 특정 기능들을 사용하기 위해 명시적으로 import 합니다.
+# 이 부분이 누락되어 NameError가 발생했습니다.
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+# --- ================================================================== ---
+
+
 # Streamlit의 캐시 기능을 사용하여 앱 세션당 딱 한 번만 실행되도록 합니다.
-# 이렇게 하면 앱이 시작될 때 필요한 모든 데이터가 준비되었는지 확인하고,
-# 없는 경우에만 다운로드하여 LookupError를 원천적으로 방지합니다.
 @st.cache_resource
 def setup_nltk():
     """
     NLTK의 필수 데이터 패키지를 다운로드하는 함수.
-    앱 실행 시 가장 먼저 호출되어야 합니다.
     """
-    nltk.download('punkt') # 문장 토큰화(sent_tokenize)에 필요
-    nltk.download('stopwords') # 불용어(stopwords)에 필요
-    nltk.download('averaged_perceptron_tagger') # 품사 태깅(pos_tag)에 필요
-    nltk.download('wordnet') # 표제어 추출(lemmatize)에 필요
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords')
+    try:
+        nltk.data.find('taggers/averaged_perceptron_tagger')
+    except LookupError:
+        nltk.download('averaged_perceptron_tagger')
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet')
 
 # --- 앱 실행 시 가장 먼저 NLTK 설정을 수행 ---
 setup_nltk()
-# --- ================================================================== ---
 
 
 # --- 초기 설정 및 상수 정의 ---
 st.set_page_config(page_title="영어 지문 상세 분석 엔진", layout="wide")
 
+# 이제 'stopwords'를 정상적으로 사용할 수 있습니다.
 STOPWORDS = set(stopwords.words('english'))
 MIN_WORD_LEN = 2
 MIN_WORD_COUNT_FOR_W2V = 1
@@ -59,6 +75,7 @@ def extract_text_from_pdf(uploaded_file):
     return text
 
 def preprocess_text_english(text):
+    # WordNetLemmatizer는 상단에서 import 했으므로 여기서 바로 사용 가능합니다.
     lemmatizer = WordNetLemmatizer()
     sentences = nltk.sent_tokenize(text)
     
@@ -197,9 +214,6 @@ def display_report(report):
 
 def main():
     st.title("📝 영어 지문 상세 분석 엔진")
-    st.markdown("사용자가 입력한 **영어 텍스트(지문)**를 다각도로 분석하여 **핵심 내용, 구조, 어휘**를 포함한 상세 리포트를 생성합니다.")
-
-    # NLTK 설정이 완료되었음을 사용자에게 알릴 수 있습니다 (선택 사항)
     st.sidebar.success("언어 분석 리소스 준비 완료!")
 
     input_method = st.radio("입력 방식 선택", ('텍스트 직접 입력', 'PDF 파일 업로드'))
@@ -216,8 +230,6 @@ def main():
     if raw_text_input and raw_text_input.strip():
         if st.button("분석 시작 ✨", type="primary"):
             with st.spinner('텍스트를 분석 중입니다...'):
-                # 이제 NLTK 함수들은 안전하게 호출됩니다.
-                from nltk.stem import WordNetLemmatizer
                 sentences, sentence_words_list = preprocess_text_english(raw_text_input)
                 
                 if not any(sentence_words_list):
